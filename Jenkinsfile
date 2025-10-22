@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-login')
         IMAGE_NAME = "rupesh2805/task1:latest"
     }
 
@@ -15,24 +14,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $IMAGE_NAME .'
-                }
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Login to Docker Hub & Push Image') {
             steps {
-                script {
-                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    sh 'docker push $IMAGE_NAME'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: rupesh2805, passwordVariable: rupeshc@20)]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE_NAME
+                    '''
                 }
             }
         }
@@ -40,7 +32,10 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 script {
-                    sh 'docker run -d -p 3000:3000 --name nodejs-demo-app $IMAGE_NAME || true'
+                    sh '''
+                        docker rm -f nodejs-demo-app || true
+                        docker run -d -p 3000:3000 --name nodejs-demo-app $IMAGE_NAME
+                    '''
                 }
             }
         }
@@ -48,7 +43,9 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'
+            script {
+                sh 'docker logout || true'
+            }
         }
     }
 }
