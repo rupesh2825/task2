@@ -18,9 +18,9 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub & Push Image') {
+        stage('Login & Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: rupesh2805, passwordVariable: rupeshc@20)]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-login', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push $IMAGE_NAME
@@ -43,9 +43,7 @@ pipeline {
 
     post {
         always {
-            script {
-                sh 'docker logout || true'
-            }
+            sh 'docker logout || true'
         }
     }
 }
